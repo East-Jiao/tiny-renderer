@@ -4,6 +4,7 @@
 #include <string>
 
 #include "io/image_io.hpp"
+#include "math/math.hpp"
 
 inline constexpr auto PPM_P3 = io::ImgOutputFormat::PPM_P3;
 inline constexpr auto PPM_P6 = io::ImgOutputFormat::PPM_P6;
@@ -34,8 +35,10 @@ class FrameBuffer {
     std::vector<unsigned char>& data();
     const std::vector<unsigned char>& data() const;
 
-    void set_pixel(int x, int y, float r, float g, float b);
-    void clear(float r, float g, float b);
+    void set_pixel(int x, int y, const hrm::vec3& color);
+    void clear(const hrm::vec3& color);
     bool save(const std::string& path, io::ImgOutputFormat format) const;
-    void line(int a_x, int a_y, int b_x, int b_y, float r, float g, float b);
+
+    void line(hrm::vec2 pa, hrm::vec2 pb, const hrm::vec3& color);
+    void triangle(hrm::vec2 va, hrm::vec2 vb, hrm::vec2 vc, const hrm::vec3& color);
 };

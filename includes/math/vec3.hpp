@@ -1,5 +1,6 @@
 #pragma once
 
+#include <concepts>
 #include <cstddef>
 
 namespace hrm {
@@ -26,36 +27,6 @@ namespace hrm {
         }
         const T& operator[](std::size_t i) const {
             return i == 0 ? x : (i == 1 ? y : z);
-        }
-
-        Vec3 operator+(const Vec3& v) const {
-            return Vec3(x + v.x, y + v.y, z + v.z);
-        }
-
-        Vec3 operator-(const Vec3& v) const {
-            return Vec3(x - v.x, y - v.y, z - v.z);
-        }
-
-        Vec3 operator*(T n) const {
-            return Vec3(x * n, y * n, z * n);
-        }
-        Vec3 operator*(const Vec3& v) const {
-            return Vec3(x * v.x, y * v.y, z * v.z);
-        }
-
-        Vec3 operator/(T n) const {
-            return Vec3(x / n, y / n, z / n);
-        }
-
-        Vec3 operator-() const {
-            return Vec3(-x, -y, -z);
-        }
-
-        bool operator==(const Vec3& v) const {
-            return (x == v.x && y == v.y && z == v.z);
-        }
-        bool operator!=(const Vec3& v) const {
-            return (x != v.x || y != v.y || z != v.z);
         }
 
         Vec3& operator+=(const Vec3& v) {
@@ -92,6 +63,53 @@ namespace hrm {
             return *this;
         }
     };
+
+    template <typename T>
+    Vec3<T> operator-(const Vec3<T>& v) {
+        return Vec3<T>(-v.x, -v.y, -v.z);
+    }
+
+    template <typename T>
+    Vec3<T> operator+(const Vec3<T>& a, const Vec3<T>& b) {
+        return Vec3<T>(a.x + b.x, a.y + b.y, a.z + b.z);
+    }
+
+    template <typename T>
+    Vec3<T> operator-(const Vec3<T>& a, const Vec3<T>& b) {
+        return Vec3<T>(a.x - b.x, a.y - b.y, a.z - b.z);
+    }
+
+    template <typename T>
+    Vec3<T> operator*(const Vec3<T>& a, const Vec3<T>& b) {
+        return Vec3<T>(a.x * b.x, a.y * b.y, a.z * b.z);
+    }
+
+    template <typename T, typename U>
+        requires std::convertible_to<U, T>
+    Vec3<T> operator*(const Vec3<T>& v, U n) {
+        return Vec3<T>(v.x * n, v.y * n, v.z * n);
+    }
+    template <typename T, typename U>
+        requires std::convertible_to<U, T>
+    Vec3<T> operator*(U n, const Vec3<T>& v) {
+        return Vec3<T>(v.x * n, v.y * n, v.z * n);
+    }
+
+    template <typename T, typename U>
+        requires std::convertible_to<U, T>
+    Vec3<T> operator/(const Vec3<T>& v, U n) {
+        return Vec3<T>(v.x / n, v.y / n, v.z / n);
+    }
+
+    template <typename T>
+    bool operator==(const Vec3<T>& a, const Vec3<T>& b) {
+        return a.x == b.x && a.y == b.y && a.z == b.z;
+    }
+
+    template <typename T>
+    bool operator!=(const Vec3<T>& a, const Vec3<T>& b) {
+        return a.x != b.x || a.y != b.y || a.z != b.z;
+    }
 
     using vec3 = Vec3<float>;
     using ivec3 = Vec3<int>;

@@ -15,7 +15,7 @@ bool load_obj(const std::string& path, Model& out) {
     if (!f) return false;
 
     std::vector<hrm::vec2> raw;
-    std::vector<std::vector<int>> faces;
+    std::vector<Face> faces;
 
     std::string line;
     while (std::getline(f, line)) {
@@ -33,7 +33,7 @@ bool load_obj(const std::string& path, Model& out) {
             char f;
             iss >> f;
 
-            std::vector<int> face;
+            Face face;
             std::string token;
             while (iss >> token) {
                 int idx = std::stoi(token.substr(0, token.find('/')));
@@ -45,9 +45,9 @@ bool load_obj(const std::string& path, Model& out) {
                     idx -= 1;   // 1-based -> 0-based
                 }
 
-                face.push_back(idx);
+                face.indices.push_back(idx);
             }
-            if (face.size() >= 2) {
+            if (face.indices.size() >= 3) {
                 faces.push_back(std::move(face));
             }
         }
@@ -58,8 +58,8 @@ bool load_obj(const std::string& path, Model& out) {
     }
 
     //确定包装盒大小
-    float minX = std::numeric_limits<float>::max(), maxX = std::numeric_limits<float>::min();
-    float minY = std::numeric_limits<float>::max(), maxY = std::numeric_limits<float>::min();
+    float minX = std::numeric_limits<float>::max(), maxX = std::numeric_limits<float>::lowest();
+    float minY = std::numeric_limits<float>::max(), maxY = std::numeric_limits<float>::lowest();
     for (auto& p : raw) {
         minX = std::min(minX, p.x), maxX = std::max(maxX, p.x);
         minY = std::min(minY, p.y), maxY = std::max(maxY, p.y);
@@ -73,24 +73,45 @@ bool load_obj(const std::string& path, Model& out) {
         out.verts.push_back(hrm::vec2((p.x - minX) * sx, (p.y - minY) * sy));
     }
 
+    out.faces.clear();
+    out.faces = std::move(faces);
+
+    out.triangles.clear();
     out.edges.clear();
-    for (auto& face : faces) {
-        int n = static_cast<int>(face.size());
+    for (auto& face : out.faces) {
+        int n = static_cast<int>(face.indices.size());
         for (int i = 0; i < n; i++) {
-            out.edges.emplace_back(face[i], face[(i + 1) % n]);
+            out.edges.emplace_back(face.indices[i], face.indices[(i + 1) % n]);
+        }
+
+        for (std::size_t i = 1; i + 1 < face.indices.size(); i++) {
+            out.triangles.push_back({face.indices[0], face.indices[i], face.indices[i + 1]});
         }
     }
 
     return true;
 }
 
-void draw_model(FrameBuffer& fb, const Model& model, float r, float g, float b) {
+#include <random>
+std::random_device rd;
+std::mt19937 gen(rd());
+std::uniform_real_distribution<float> dist(0,1);
+
+void draw_model(FrameBuffer& fb, const Model& model, const hrm::vec3& color) {
     int width = fb.width(), height = fb.height();
-    for (auto& [i0, i1] : model.edges) {
-        const hrm::vec2& pa = model.verts[i0];
-        const hrm::vec2& pb = model.verts[i1];
-        int a_x = (int)(pa.x * (width - 1)), a_y = (int)((1.0f - pa.y) * (height - 1));
-        int b_x = (int)(pb.x * (width - 1)), b_y = (int)((1.0f - pb.y) * (height - 1));
-        fb.line(a_x, a_y, b_x, b_y, r, g, b);
+    // for (auto& [i0, i1] : model.edges) {
+    //     const hrm::vec2& pa = model.verts[i0];
+    //     const hrm::vec2& pb = model.verts[i1];
+    //     int a_x = (int)(pa.x * (width - 1)), a_y = (int)((1.0f - pa.y) * (height - 1));
+    //     int b_x = (int)(pb.x * (width - 1)), b_y = (int)((1.0f - pb.y) * (height - 1));
+    //     fb.line(hrm::vec2(a_x, a_y), hrm::vec2(b_x, b_y), color);
+    // }
+
+    for (auto& tri : model.triangles) {
+        float rdn = dist(gen);
+        auto p1 = hrm::vec2(model.verts[tri.i0].x * (width - 1), (1.0f - model.verts[tri.i0].y) * (height - 1));
+        auto p2 = hrm::vec2(model.verts[tri.i1].x * (width - 1), (1.0f - model.verts[tri.i1].y) * (height - 1));
+        auto p3 = hrm::vec2(model.verts[tri.i2].x * (width - 1), (1.0f - model.verts[tri.i2].y) * (height - 1));
+        fb.triangle(p1, p2, p3, rdn * color);
     }
 }

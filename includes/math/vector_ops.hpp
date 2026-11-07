@@ -10,7 +10,7 @@ namespace hrm {
     concept Vector = requires (const V& v, int i) {
         typename V::value_type;
         { V::dim } -> std::convertible_to<size_t>;
-        { v[i] } -> std::convertible_to<typename V::valuetype>;
+        { v[i] } -> std::convertible_to<typename V::value_type>;
     };
 
     template <typename V>
@@ -73,7 +73,7 @@ namespace hrm {
     auto clamp(const V& v, const V& l, const V& h) {
         V res{};
         for (std::size_t i = 0; i < V::dim; i++) {
-            res[i] = v[i] < lo[i] ? lo[i] : (v[i] > h[i] ? h[i] : v[i]);
+            res[i] = v[i] < l[i] ? l[i] : (v[i] > h[i] ? h[i] : v[i]);
         }
         return res;
     }
